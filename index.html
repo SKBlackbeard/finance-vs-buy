@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cash vs Finance — vehicle break-even</title>
+<style>
+:root{
+  color-scheme: light;
+  --surface-0:#f4f3f0;
+  --surface-1:#fcfcfb;
+  --surface-2:#eeede9;
+  --border:#e2e1dc;
+  --border-strong:#cfcec8;
+  --text-primary:#0b0b0b;
+  --text-secondary:#52514e;
+  --text-muted:#85847e;
+  --grid:#e8e7e3;
+  --finance:#2a78d6;
+  --cash:#eb6834;
+  --finance-soft:rgba(42,120,214,.16);
+  --cash-soft:rgba(235,104,52,.16);
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --surface-0:#131312;
+    --surface-1:#1a1a19;
+    --surface-2:#232321;
+    --border:#33332f;
+    --border-strong:#45453f;
+    --text-primary:#ffffff;
+    --text-secondary:#c3c2b7;
+    --text-muted:#8d8c82;
+    --grid:#2b2b28;
+    --finance:#3987e5;
+    --cash:#d95926;
+    --finance-soft:rgba(57,135,229,.20);
+    --cash-soft:rgba(217,89,38,.20);
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--surface-0); color:var(--text-primary);
+  font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1340px;margin:0 auto;padding:22px 18px 56px}
+header{margin-bottom:18px}
+h1{font-size:19px;margin:0 0 3px;letter-spacing:-.01em}
+header p{margin:0;color:var(--text-secondary);font-size:13px;max-width:70ch}
+.app{display:grid;grid-template-columns:322px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:980px){.app{grid-template-columns:1fr}}
+
+.panel{background:var(--surface-1);border:1px solid var(--border);border-radius:11px}
+.panel-head{
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);
+}
+.panel-body{padding:13px 14px}
+
+/* controls */
+.group + .group{margin-top:15px;padding-top:14px;border-top:1px dashed var(--border)}
+.group-label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:9px}
+.ctl{margin-bottom:12px}
+.ctl:last-child{margin-bottom:0}
+.ctl-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}
+.ctl-label{font-size:12.5px;color:var(--text-secondary)}
+.ctl input[type=number]{
+  width:104px;padding:3px 7px;text-align:right;font:inherit;font-size:12.5px;font-variant-numeric:tabular-nums;
+  background:var(--surface-2);color:var(--text-primary);
+  border:1px solid var(--border-strong);border-radius:6px;
+}
+.ctl input[type=number]:focus{outline:2px solid var(--finance);outline-offset:1px}
+.ctl input[type=range]{width:100%;margin:0;accent-color:var(--finance);height:18px}
+.ctl-hint{font-size:11.5px;color:var(--text-muted);margin-top:3px}
+.seg{display:flex;gap:0;border:1px solid var(--border-strong);border-radius:7px;overflow:hidden}
+.seg button{
+  flex:1;padding:6px 8px;font:inherit;font-size:12px;cursor:pointer;
+  background:var(--surface-2);color:var(--text-secondary);border:0;border-left:1px solid var(--border-strong);
+}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed=true]{background:var(--finance);color:#fff;font-weight:600}
+
+/* verdict */
+.verdict{margin-bottom:18px}
+.verdict-body{padding:16px 18px}
+.headline{font-size:12.5px;color:var(--text-secondary);margin:0 0 4px}
+.hero{font-size:31px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.12;margin:0}
+.hero.na{font-size:19px;font-weight:600}
+.verdict-note{margin:9px 0 0;font-size:13px;color:var(--text-secondary);max-width:68ch}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;margin-bottom:9px}
+.pill.fin{background:var(--finance-soft);color:var(--finance)}
+.pill.cash{background:var(--cash-soft);color:var(--cash)}
+
+/* charts */
+.chart-card{margin-bottom:18px}
+.chart-head{padding:13px 16px 0}
+.chart-title{font-size:14px;font-weight:600;margin:0 0 2px}
+.chart-sub{font-size:12.5px;color:var(--text-muted);margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:15px;padding:10px 16px 2px}
+.legend span{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-secondary)}
+.swatch{width:11px;height:11px;border-radius:3px;flex:none}
+.chart-host{position:relative;padding:2px 10px 10px}
+svg{display:block;width:100%;overflow:visible}
+.tip{
+  position:absolute;pointer-events:none;opacity:0;transition:opacity .08s;
+  background:var(--surface-1);border:1px solid var(--border-strong);border-radius:8px;
+  padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.13);min-width:168px;z-index:5;
+}
+.tip-h{font-weight:600;margin-bottom:5px;font-size:12px}
+.tip-row{display:flex;justify-content:space-between;gap:14px;font-variant-numeric:tabular-nums}
+.tip-row .k{display:flex;align-items:center;gap:6px;color:var(--text-secondary)}
+.tip-row .v{font-weight:600}
+.tip-sep{border-top:1px solid var(--border);margin:5px 0}
+
+/* numbers table */
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;text-align:right;font-size:12.5px;border-bottom:1px solid var(--border)}
+th:first-child,td:first-child{text-align:left;color:var(--text-secondary);font-weight:400}
+thead th{color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+tbody tr:last-child td{border-bottom:0;font-weight:650}
+td.fin{color:var(--finance)} td.cash{color:var(--cash)}
+details.numbers{margin-top:0}
+details.numbers summary{
+  cursor:pointer;padding:11px 14px;font-size:11px;font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);
+}
+details.numbers[open] summary{border-bottom:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Cash vs finance — where's the break-even?</h1>
+    <p>You pay instalments from salary either way. Paying cash means liquidating investments or drawing on the bond, so the question is what that capital would have earned. Everything recalculates as you drag.</p>
+  </header>
+
+  <div class="app">
+    <div class="panel" id="controls">
+      <div class="panel-head">Assumptions</div>
+      <div class="panel-body"></div>
+    </div>
+
+    <div>
+      <section class="panel verdict">
+        <div class="panel-head">Break-even</div>
+        <div class="verdict-body" id="verdict"></div>
+      </section>
+
+      <section class="panel chart-card">
+        <div class="chart-head">
+          <h2 class="chart-title">Net benefit of financing, by vehicle price</h2>
+          <p class="chart-sub">Vehicle price across the bottom; your end-of-term position under finance minus your position under cash, up the side. Gridlines every R50k.</p>
+        </div>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--finance-soft);border:1px solid var(--finance)"></i>Financing ahead</span>
+          <span><i class="swatch" style="background:var(--cash-soft);border:1px solid var(--cash)"></i>Cash ahead</span>
+        </div>
+        <div class="chart-host"><svg id="priceChart"></svg><div class="tip" id="priceTip"></div></div>
+      </section>
+
+      <section class="panel chart-card">
+        <div class="chart-head">
+          <h2 class="chart-title">What you're worth over the term, at the price you set</h2>
+          <p class="chart-sub">Months across the bottom, invested capital up the side. Gridlines every 4 months.</p>
+        </div>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--finance)"></i>Finance — lump stays invested</span>
+          <span><i class="swatch" style="background:var(--cash)"></i>Cash — freed instalment reinvested</span>
+        </div>
+        <div class="chart-host"><svg id="timeChart"></svg><div class="tip" id="timeTip"></div></div>
+      </section>
+
+      <section class="panel">
+        <details class="numbers" open>
+          <summary>The numbers</summary>
+          <div id="numbers"></div>
+        </details>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
